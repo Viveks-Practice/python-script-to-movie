@@ -87,42 +87,44 @@ audio_clips = []
 text_clips = []
 total_duration = 0
 
-for index, subtitle in enumerate(subtitles):
-    payload = {'text': subtitle}
-    tts_response = requests.post(tts_api_url, json=payload)
-    if tts_response.status_code == 200:
-        tts_url = tts_response.json().get('audioUrl')
-        # Process the tts_url as needed
-    else:
-        print(f"Error in TTS API call: Status Code {tts_response.status_code}")
-        print(f"Response Content: {tts_response.text}")
-        # Handle the error appropriately
+print("Concatenating subtitles for TTS...")
+print(f"Subtitles: {subtitles}")
+concatenated_subtitles = ' '.join(subtitles)
+print(f"Concatenated Subtitles: {concatenated_subtitles}")
 
+# Send the concatenated subtitles to TTS and download the audio file
+tts_response = requests.post(tts_api_url, json={'text': concatenated_subtitles})
+if tts_response.status_code == 200:
     tts_url = tts_response.json().get('audioUrl')
-    print(f"Fetching TTS audio from: {tts_url}")
-
-    # Download the audio file
-    local_audio_filename = f"audio_{index}.mp3"
+    local_audio_filename = "complete_audio.mp3"
     download_file(tts_url, local_audio_filename)
+    final_audio = AudioFileClip(local_audio_filename)
+else:
+    print(f"Error in TTS API call: Status Code {tts_response.status_code}")
+    print(f"Response Content: {tts_response.text}")
+    # Handle the error appropriately
 
-    # Create an AudioFileClip and append it to the audio_clips list
-    audio_clip = AudioFileClip(local_audio_filename)
-    audio_clips.append(audio_clip)
+# Create TextClips and sync with the audio
+text_clips = []
+total_duration = final_audio.duration
+current_start = 0
 
-    # Create a TextClip for each subtitle
-    text_clip = (TextClip(subtitle, fontsize=35, color='white', font='Arial', align='center')
-                .set_duration(audio_clip.duration)
-                .set_start(total_duration)
-                .set_position(('center', 'bottom'))  # Adjust position here
-                .margin(bottom=20, opacity=0)  # Add padding at the bottom
-                .crossfadein(0.5)  # Fade in effect
-                .crossfadeout(0.5))  # Fade out effect
+for subtitle in subtitles:
+    # Estimate duration of each subtitle (simple approach based on number of words)
+    subtitle_duration = len(subtitle.split()) / len(concatenated_subtitles.split()) * total_duration
+    
+    text_clip = TextClip(subtitle, fontsize=35, color='white', font='Arial', align='center')
+    text_clip = text_clip.set_duration(subtitle_duration)
+    text_clip = text_clip.set_start(current_start)
+    text_clip = text_clip.set_position(('center', 'bottom'))
+    text_clip = text_clip.margin(bottom=20, opacity=0)
     text_clips.append(text_clip)
 
-    total_duration += audio_clip.duration
+    current_start += subtitle_duration
+
 
 # Concatenate audio clips
-final_audio = concatenate_audioclips(audio_clips) 
+# final_audio = concatenate_audioclips(audio_clips) 
 
 # Update the duration of the image clip to match the total duration of the audio
 image_clip = image_clip.set_duration(total_duration)
