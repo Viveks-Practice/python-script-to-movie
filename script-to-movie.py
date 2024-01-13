@@ -15,17 +15,17 @@ print("Starting video generation script...")
 # Replace with your actual API endpoints and data
 image_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/gpt-dalle-request"
 gpt_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/gpt-ai-request"
-tts_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/google-tts"
-# tts_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/eleven-labs-tts"
+# tts_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/google-tts"
+tts_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/eleven-labs-tts"
 
-text = "courage and hope"
+text = "What do I do when I lose someone dear to me?"
 
 print("Generating gpt response...")
 
 # Get subtitles
 gpt_response = requests.post(gpt_api_url, json={
     'systemMessage':
-    "Treat the user's message as a topic. Create a good relatable passage from the Bible about the topic provided by the user, the passage should begin with \"bible passage - start\" and at  the end, it should read \"bible passage - end\", these will be my delimiters for my code. Next give a description of the passage in words separated by commas. These will be adjectives, nouns, verbs, that describe the feelings and emotions of this passage to an image generation software. Delimit this with \"image prompt - start\" and delimit the end with \"image prompt - end\". Next, give a paragraph (that would take about 45 seconds for a calm voice to read fully) , that has same meaning, is inspirational or motivational, that relates to a daily life of an average person - the inspirational paragraph should being with \"inspirational - start\" and at the end of it, please output \"inspirational - end\". These will be my delimiters .  Before this inspirational paragraph, (that I'm going to put it into a video with ambient music, for people to listen to) can you give me something to say as an introduction before that quote, to greet people and that them for being with us and taking their time to listen - delimit the start with \"intro - start\", and delimit the end with \"intro - end\" . And give me something to say in the end, after the quote, to tell them good bye, thanks again, and please enjoy this beautiful ambient music i've made, hopefully to make your day better - delimit the start of this with \"conclusion - start\" and delimit the end of this with \"conclusion - end\" . And then turn it (The intro, the bible passage, the inspirational paragraph, and the conclusion together (do not include delimiters in the subtitles array)) into a set of subtitles in array format. Ensure the subtitles, completely read the passage created verbatim.  But be sure to output the whole passage. And then its corresponding array. Be sure to output the array following the characters \"Subtitles Array: \" every time. And the array should be of form [\"subtitle1\", \"subtitle2\", \"subtitle3\", etc...]. Be sure there are no further characters after the last subtitle in the array.",
+    "Treat the user's message as a topic. Create a good relatable passage from the Bible about the topic provided by the user, the passage should begin with \"bible passage - start\" and at  the end, it should read \"bible passage - end\" (excluding quote marks), these will be my delimiters for my code. Next give a description of the passage in words separated by commas. These will be adjectives, nouns, verbs, that describe the feelings and emotions of this passage to an image generation software. Delimit this with \"image prompt - start\" and delimit the end with \"image prompt - end\" (excluding quote marks). Next, give a paragraph (that would take about 45 seconds for a calm voice to read fully) , that has same meaning, is inspirational or motivational, that relates to a daily life of an average person - the inspirational paragraph should being with \"inspirational - start\" and at the end of it, please output \"inspirational - end\" (excluding quote marks). These will be my delimiters .  Before this inspirational paragraph, (that I'm going to put it into a video with ambient music, for people to listen to) can you give me something to say as an introduction before that quote, to greet people and that them for being with us and taking their time to listen - delimit the start with \"intro - start\", and delimit the end with \"intro - end\" (excluding quote marks). And give me something to say in the end, after the quote, to tell them good bye, thanks again, and please enjoy this beautiful ambient music i've made, hopefully to make your day better - delimit the start of this with \"conclusion - start\" and delimit the end of this with \"conclusion - end\" (excluding quote marks). And then turn it (The intro, the bible passage, the inspirational paragraph, and the conclusion together (do not include delimiters in the subtitles array)) into a set of subtitles in array format. Ensure the subtitles, completely read the passage created verbatim.  But be sure to output the whole passage. And then its corresponding array. Be sure to output the array following the characters \"Subtitles Array: \" (excluding quote marks) every time. And the array should be of form [\"subtitle1\", \"subtitle2\", \"subtitle3\", etc...]. Be sure there are no further characters after the last subtitle in the array.",
     'aiModel': "gpt-4",
     'messages': [{'role': "user", 'content': text}],
 })
@@ -35,8 +35,8 @@ message = response_json.get('message', '')
 print(f"Response Content: {message}")
 
 # Extracting the specific string for image prompt
-start_marker = "Image prompt - start"
-end_marker = "Image prompt - end"
+start_marker = "image prompt - start"
+end_marker = "image prompt - end"
 start_index = message.find(start_marker)
 end_index = message.find(end_marker)
 
@@ -88,7 +88,16 @@ text_clips = []
 total_duration = 0
 
 for index, subtitle in enumerate(subtitles):
-    tts_response = requests.post(tts_api_url, json={'text': subtitle})
+    payload = {'text': subtitle}
+    tts_response = requests.post(tts_api_url, json=payload)
+    if tts_response.status_code == 200:
+        tts_url = tts_response.json().get('audioUrl')
+        # Process the tts_url as needed
+    else:
+        print(f"Error in TTS API call: Status Code {tts_response.status_code}")
+        print(f"Response Content: {tts_response.text}")
+        # Handle the error appropriately
+
     tts_url = tts_response.json().get('audioUrl')
     print(f"Fetching TTS audio from: {tts_url}")
 
