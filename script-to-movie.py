@@ -32,10 +32,11 @@ gpt_response = requests.post(gpt_api_url, json={
 
 response_json = gpt_response.json()
 message = response_json.get('message', '')
+print(f"Response Content: {message}")
 
 # Extracting the specific string for image prompt
-start_marker = "image prompt - start"
-end_marker = "image prompt - end"
+start_marker = "Image prompt - start"
+end_marker = "Image prompt - end"
 start_index = message.find(start_marker)
 end_index = message.find(end_marker)
 
@@ -61,7 +62,7 @@ else:
     print(f"Error in image API call: Status Code {image_response.status_code}")
     print(f"Response Content: {image_response.text}")
 
-print(f"Full Message: {message}")
+print(f"Response Content: {image_response.text}")
 print("Requesting TTS audio for the subtitle array...")
 start_index = message.find("Subtitles Array:")
 if start_index != -1:
