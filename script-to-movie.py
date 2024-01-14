@@ -17,6 +17,8 @@ image_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/gpt-d
 gpt_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/gpt-ai-request"
 # tts_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/google-tts"
 tts_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/eleven-labs-tts"
+# Assuming tts_url contains the URL of the audio file
+google_sst_api_url = "https://us-central1-chat-window-widget.cloudfunctions.net/google-sst"
 
 text = "Overcoming the loss of a loved one"
 
@@ -103,6 +105,27 @@ else:
     print(f"Error in TTS API call: Status Code {tts_response.status_code}")
     print(f"Response Content: {tts_response.text}")
     # Handle the error appropriately
+
+print("Calling Google Speech-to-Text API...")
+
+# replace gs://chat-window-widget-leaf-tech/script-to-movie/audio-20240113T171046657Z.mp3 with  this form gs://chat-window-widget-leaf-tech/script-to-movie/audio-20240113T171046657Z.mp3
+audio_uri = tts_url.replace("https://storage.googleapis.com/", "gs://")
+
+# Prepare the payload for the Google SST API
+sst_payload = {
+    "audioUri": audio_uri  # Use the URL obtained from the TTS response
+}
+
+# Make the API call
+sst_response = requests.post(google_sst_api_url, json=sst_payload)
+
+if sst_response.status_code == 200:
+    sst_data = sst_response.json()
+    print("Google Speech-to-Text API Response:")
+    print(json.dumps(sst_data, indent=2))  # Pretty print the response
+else:
+    print(f"Error in Google Speech-to-Text API call: Status Code {sst_response.status_code}")
+    print(f"Response Content: {sst_response.text}")
 
 # Create TextClips and sync with the audio
 text_clips = []
